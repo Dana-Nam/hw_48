@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'models/joke_model.dart';
+import 'widgets/joke_card.dart';
+import 'screens/favorites_screen.dart';
 
 class JokesApp extends StatefulWidget {
   const JokesApp({super.key});
@@ -10,22 +13,55 @@ class JokesApp extends StatefulWidget {
 }
 
 class _JokesAppState extends State<JokesApp> {
-  String? jokeText;
-  int favoritesCount = 0;
+  Joke? currentJoke;
+  List<Joke> favorites = [];
 
   Future<void> fetchJoke() async {
     final response =
         await http.get(Uri.parse('https://v2.jokeapi.dev/joke/any'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      final newJoke = Joke.fromJson(data);
+      final alreadyFavorite = favorites.any((j) => j.id == newJoke.id);
       setState(() {
-        if (data['type'] == 'single') {
-          jokeText = data['joke'];
-        } else {
-          jokeText = '${data['setup']}\n\n${data['delivery']}';
-        }
+        currentJoke = newJoke.copyWith(isFavorite: alreadyFavorite);
       });
     }
+  }
+
+  void toggleFavorite() {
+    if (currentJoke == null) return;
+    final exists = favorites.any((j) => j.id == currentJoke!.id);
+    setState(() {
+      if (exists) {
+        favorites.removeWhere((j) => j.id == currentJoke!.id);
+        currentJoke = currentJoke!.copyWith(isFavorite: false);
+      } else {
+        favorites.add(currentJoke!.copyWith(isFavorite: true));
+        currentJoke = currentJoke!.copyWith(isFavorite: true);
+      }
+    });
+  }
+
+  void removeFromFavorites(String id) {
+    setState(() {
+      favorites.removeWhere((j) => j.id == id);
+      if (currentJoke?.id == id) {
+        currentJoke = currentJoke!.copyWith(isFavorite: false);
+      }
+    });
+  }
+
+  void openFavoritesScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FavoritesScreen(
+          favorites: favorites,
+          onRemove: removeFromFavorites,
+        ),
+      ),
+    );
   }
 
   @override
@@ -45,7 +81,7 @@ class _JokesAppState extends State<JokesApp> {
             children: [
               IconButton(
                 icon: Icon(Icons.favorite),
-                onPressed: () {},
+                onPressed: openFavoritesScreen,
               ),
               Positioned(
                 right: 6,
@@ -54,7 +90,7 @@ class _JokesAppState extends State<JokesApp> {
                   radius: 10,
                   backgroundColor: Colors.red,
                   child: Text(
-                    '$favoritesCount',
+                    '${favorites.length}',
                     style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),
@@ -68,15 +104,10 @@ class _JokesAppState extends State<JokesApp> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Expanded(
-              child: Center(
-                child: Text(
-                  jokeText ?? 'Загрузка...',
-                  style: TextStyle(fontSize: 18),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
+            if (currentJoke != null)
+              JokeCard(joke: currentJoke!)
+            else
+              Expanded(child: Center(child: CircularProgressIndicator())),
             SizedBox(height: 24),
             Row(
               children: [
@@ -89,8 +120,12 @@ class _JokesAppState extends State<JokesApp> {
                 SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {},
-                    child: Text('В избранное'),
+                    onPressed: toggleFavorite,
+                    child: Text(
+                      currentJoke?.isFavorite == true
+                          ? 'Убрать из избранного'
+                          : 'Добавить в избранное',
+                    ),
                   ),
                 ),
               ],
