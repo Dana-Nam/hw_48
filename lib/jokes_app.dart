@@ -52,13 +52,17 @@ class _JokesAppState extends State<JokesApp> {
     });
   }
 
-  void openFavoritesScreen() {
-    Navigator.push(
+  void openFavoritesScreen() async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => FavoritesScreen(
           favorites: favorites,
-          onRemove: removeFromFavorites,
+          onRemove: (id) {
+            removeFromFavorites(id);
+            Navigator.pop(context);
+            openFavoritesScreen();
+          },
         ),
       ),
     );

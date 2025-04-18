@@ -13,29 +13,44 @@ class JokeCard extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade200,
-                  blurRadius: 6,
-                  offset: Offset(0, 3),
+          Stack(
+            children: [
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade200,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Center(
-              child: SingleChildScrollView(
-                child: Text(
-                  joke.content,
-                  style: TextStyle(fontSize: 18),
-                  textAlign: TextAlign.center,
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Text(
+                      joke.content,
+                      style: TextStyle(fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                 ),
               ),
-            ),
+              if (joke.isFavorite)
+                Positioned(
+                  right: 12,
+                  top: 12,
+                  child: Icon(
+                    Icons.favorite,
+                    color: Colors.redAccent,
+                    size: 20,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
