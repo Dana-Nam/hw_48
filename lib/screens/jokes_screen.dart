@@ -1,71 +1,49 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'models/joke_model.dart';
-import 'widgets/joke_card.dart';
-import 'screens/favorites_screen.dart';
+import '../models/joke_model.dart';
+import '../providers/favorites_provider.dart';
+import '../widgets/joke_card.dart';
 
-class JokesApp extends StatefulWidget {
-  const JokesApp({super.key});
+class JokesScreen extends StatefulWidget {
+  const JokesScreen({super.key});
 
   @override
-  State<JokesApp> createState() => _JokesAppState();
+  State<JokesScreen> createState() => _JokesScreenState();
 }
 
-class _JokesAppState extends State<JokesApp> {
+class _JokesScreenState extends State<JokesScreen> {
   Joke? currentJoke;
-  List<Joke> favorites = [];
 
   Future<void> fetchJoke() async {
     final response =
         await http.get(Uri.parse('https://v2.jokeapi.dev/joke/any'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      final newJoke = Joke.fromJson(data);
-      final alreadyFavorite = favorites.any((j) => j.id == newJoke.id);
+      final joke = Joke.fromJson(data);
+      final isFav = FavoritesProvider.of(context)
+              ?.favorites
+              .any((j) => j.id == joke.id) ??
+          false;
       setState(() {
-        currentJoke = newJoke.copyWith(isFavorite: alreadyFavorite);
+        currentJoke = joke.copyWith(isFavorite: isFav);
       });
     }
   }
 
   void toggleFavorite() {
     if (currentJoke == null) return;
-    final exists = favorites.any((j) => j.id == currentJoke!.id);
+    final provider = FavoritesProvider.of(context);
+    final exists =
+        provider?.favorites.any((j) => j.id == currentJoke!.id) ?? false;
+    if (exists) {
+      provider?.remove(currentJoke!.id);
+    } else {
+      provider?.add(currentJoke!);
+    }
     setState(() {
-      if (exists) {
-        favorites.removeWhere((j) => j.id == currentJoke!.id);
-        currentJoke = currentJoke!.copyWith(isFavorite: false);
-      } else {
-        favorites.add(currentJoke!.copyWith(isFavorite: true));
-        currentJoke = currentJoke!.copyWith(isFavorite: true);
-      }
+      currentJoke = currentJoke!.copyWith(isFavorite: !exists);
     });
-  }
-
-  void removeFromFavorites(String id) {
-    setState(() {
-      favorites.removeWhere((j) => j.id == id);
-      if (currentJoke?.id == id) {
-        currentJoke = currentJoke!.copyWith(isFavorite: false);
-      }
-    });
-  }
-
-  void openFavoritesScreen() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FavoritesScreen(
-          favorites: favorites,
-          onRemove: (id) {
-            removeFromFavorites(id);
-            Navigator.pop(context);
-            openFavoritesScreen();
-          },
-        ),
-      ),
-    );
   }
 
   @override
@@ -76,6 +54,7 @@ class _JokesAppState extends State<JokesApp> {
 
   @override
   Widget build(BuildContext context) {
+    final favoritesCount = FavoritesProvider.of(context)?.favorites.length ?? 0;
     return Scaffold(
       appBar: AppBar(
         title: Text('Шутки'),
@@ -85,7 +64,9 @@ class _JokesAppState extends State<JokesApp> {
             children: [
               IconButton(
                 icon: Icon(Icons.favorite),
-                onPressed: openFavoritesScreen,
+                onPressed: () {
+                  Navigator.pushNamed(context, '/favorites');
+                },
               ),
               Positioned(
                 right: 6,
@@ -94,7 +75,7 @@ class _JokesAppState extends State<JokesApp> {
                   radius: 10,
                   backgroundColor: Colors.red,
                   child: Text(
-                    '${favorites.length}',
+                    '$favoritesCount',
                     style: TextStyle(color: Colors.white, fontSize: 12),
                   ),
                 ),

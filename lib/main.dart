@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hw_48/jokes_app.dart';
+import 'screens/jokes_screen.dart';
+import 'screens/favorites_screen.dart';
+import 'providers/favorites_state.dart';
 
 void main() {
   runApp(const MyApp());
@@ -10,11 +12,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
+    return FavoritesState(
+      child: MaterialApp(
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
+        ),
+        initialRoute: '/',
+        routes: {
+          '/': (context) => JokesScreen(),
+          '/favorites': (context) => FavoritesScreen(),
+        },
       ),
-      home: JokesApp(),
     );
   }
 }
