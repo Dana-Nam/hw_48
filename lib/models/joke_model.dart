@@ -23,6 +23,22 @@ class Joke {
     );
   }
 
+  factory Joke.fromLocalJson(Map<String, dynamic> json) {
+    return Joke(
+      id: json['id'],
+      content: json['content'],
+      isFavorite: json['isFavorite'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'content': content,
+      'isFavorite': isFavorite,
+    };
+  }
+
   Joke copyWith({bool? isFavorite}) {
     return Joke(
       id: id,
